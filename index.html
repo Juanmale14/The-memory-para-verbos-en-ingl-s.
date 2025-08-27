@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game - Verbos Irregulares</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .score, .moves, .timer {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .reset-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.6s ease;
+            transform-style: preserve-3d;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            min-height: 120px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+            transform: scale(1.1);
+            cursor: default;
+            animation: matchSuccess 0.8s ease-out forwards;
+        }
+
+        .card.matched:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes matchSuccess {
+            0% { 
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: scale(0);
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .card-front {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-size: 2rem;
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #ffecd2, #fcb69f);
+            color: #333;
+            transform: rotateY(180deg);
+            font-size: 1.1rem;
+            line-height: 1.2;
+        }
+
+        .infinitive {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef) !important;
+        }
+
+        .past {
+            background: linear-gradient(45deg, #a8edea, #fed6e3) !important;
+        }
+
+        .win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+        }
+
+        .win-message.show {
+            display: block;
+            animation: celebration 0.8s ease-out;
+        }
+
+        @keyframes celebration {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .level-selector {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .level-selector h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .level-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .level-btn {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-width: 120px;
+        }
+
+        .level-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .level-btn.active {
+            background: linear-gradient(45deg, #00b894, #00a085);
+            transform: scale(1.05);
+        }
+
+        .level-btn small {
+            display: block;
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .level-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+<style type="text/css">
+.grande { font-size: 60px; }
+</style>
+<script>
+// Escribir aqui el código Javascript
+</script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎮 Memory Game - Irregular Verbs</h1>
+            <p class="subtitle">¡Encuentra las parejas de verbos irregulares!</p>
+        </div>
+
+        <div class="instructions">
+            <p>🎯 <strong>Instrucciones:</strong> Haz clic en las cartas para voltearlas y encuentra las parejas entre el infinitivo y su forma en pasado. ¡Memoriza las posiciones y completa el juego!</p>
+        </div>
+
+        <div class="level-selector">
+            <h3>🎚️ Selecciona tu nivel:</h3>
+            <div class="level-buttons">
+                <button class="level-btn active" onclick="setLevel(1)">
+                    🟢 Nivel 1<br><small>10 parejas</small>
+                </button>
+                <button class="level-btn" onclick="setLevel(2)">
+                    🔴 Nivel 2<br><small>20 parejas</small>
+                </button>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div class="score">🏆 Parejas: <span id="score">0</span>/<span id="totalPairs">10</span></div>
+            <div class="moves">👆 Movimientos: <span id="moves">0</span></div>
+            <div class="timer">⏰ Tiempo: <span id="timer">04:35</span></div>
+            <button class="reset-btn" onclick="resetGame()">🔄 Nuevo Juego</button>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+
+        <div class="win-message" id="winMessage">
+            <h2>🎉 ¡Felicidades! 🎉</h2>
+            <p>¡Has completado el juego!</p>
+            <p>Movimientos: <span id="finalMoves"></span></p>
+            <p>Tiempo: <span id="finalTime"></span></p>
+            <button class="reset-btn" onclick="resetGame()" style="margin-top: 15px;">🎮 Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // Verbos irregulares con sus formas en pasado
+        const verbs = [
+            { infinitive: 'be', past: 'was/were' },
+            { infinitive: 'have', past: 'had' },
+            { infinitive: 'do', past: 'did' },
+            { infinitive: 'say', past: 'said' },
+            { infinitive: 'go', past: 'went' },
+            { infinitive: 'get', past: 'got' },
+            { infinitive: 'make', past: 'made' },
+            { infinitive: 'know', past: 'knew' },
+            { infinitive: 'think', past: 'thought' },
+            { infinitive: 'take', past: 'took' },
+            { infinitive: 'see', past: 'saw' },
+            { infinitive: 'come', past: 'came' },
+            { infinitive: 'give', past: 'gave' },
+            { infinitive: 'find', past: 'found' },
+            { infinitive: 'tell', past: 'told' },
+            { infinitive: 'become', past: 'became' },
+            { infinitive: 'leave', past: 'left' },
+            { infinitive: 'feel', past: 'felt' },
+            { infinitive: 'put', past: 'put' },
+            { infinitive: 'bring', past: 'brought' }
+        ];
+
+        let gameCards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let currentLevel = 1;
+        let totalPairs = 10;
+
+        // Crear las cartas del juego según el nivel
+        function createGameCards() {
+            gameCards = [];
+            
+            // Seleccionar verbos según el nivel
+            const selectedVerbs = verbs.slice(0, totalPairs);
+            
+            selectedVerbs.forEach((verb, index) => {
+                // Carta del infinitivo
+                gameCards.push({
+                    id: `inf-${index}`,
+                    text: verb.infinitive,
+                    type: 'infinitive',
+                    pairId: index,
+                    matched: false
+                });
+                
+                // Carta del pasado
+                gameCards.push({
+                    id: `past-${index}`,
+                    text: verb.past,
+                    type: 'past',
+                    pairId: index,
+                    matched: false
+                });
+            });
+            
+            // Mezclar las cartas
+            shuffleArray(gameCards);
+        }
+
+        // Función para mezclar array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Renderizar el tablero de juego
+        function renderGameBoard() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            
+            gameCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.cardId = card.id;
+                cardElement.dataset.index = index;
+                
+                cardElement.innerHTML = `
+                    <div class="card-front">?</div>
+                    <div class="card-back ${card.type}">
+                        ${card.text}
+                        <br><small>${card.type === 'infinitive' ? '(infinitive)' : '(past)'}</small>
+                    </div>
+                `;
+                
+                cardElement.addEventListener('click', () => flipCard(index));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+
+        // Voltear carta
+        function flipCard(index) {
+            const card = gameCards[index];
+            const cardElement = document.querySelector(`[data-index="${index}"]`);
+            
+            // No permitir voltear si ya está volteada, emparejada, o hay 2 cartas volteadas
+            if (cardElement.classList.contains('flipped') || 
+                card.matched || 
+                flippedCards.length >= 2) {
+                return;
+            }
+            
+            // Iniciar timer en el primer movimiento
+            if (!startTime) {
+                startTimer();
+            }
+            
+            cardElement.classList.add('flipped');
+            flippedCards.push({ index, card });
+            
+            if (flippedCards.length === 2) {
+                moves++;
+                updateMoves();
+                setTimeout(checkMatch, 1000);
+            }
+        }
+
+        // Verificar si hay coincidencia
+        function checkMatch() {
+            const [first, second] = flippedCards;
+            
+            if (first.card.pairId === second.card.pairId) {
+                // ¡Coincidencia!
+                first.card.matched = true;
+                second.card.matched = true;
+                
+                const firstElement = document.querySelector(`[data-index="${first.index}"]`);
+                const secondElement = document.querySelector(`[data-index="${second.index}"]`);
+                
+                firstElement.classList.add('matched');
+                secondElement.classList.add('matched');
+                
+                matchedPairs++;
+                updateScore();
+                
+                if (matchedPairs === totalPairs) {
+                    setTimeout(showWinMessage, 500);
+                }
+            } else {
+                // No coinciden, voltear de vuelta
+                const firstElement = document.querySelector(`[data-index="${first.index}"]`);
+                const secondElement = document.querySelector(`[data-index="${second.index}"]`);
+                
+                firstElement.classList.remove('flipped');
+                secondElement.classList.remove('flipped');
+            }
+            
+            flippedCards = [];
+        }
+
+        // Actualizar puntuación
+        function updateScore() {
+            document.getElementById('score').textContent = matchedPairs;
+        }
+
+        // Actualizar movimientos
+        function updateMoves() {
+            document.getElementById('moves').textContent = moves;
+        }
+
+        // Iniciar cronómetro
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Actualizar cronómetro
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Mostrar mensaje de victoria
+        function showWinMessage() {
+            clearInterval(timerInterval);
+            
+            document.getElementById('finalMoves').textContent = moves;
+            document.getElementById('finalTime').textContent = document.getElementById('timer').textContent;
+            document.getElementById('winMessage').classList.add('show');
+        }
+
+        // Reiniciar juego
+        function resetGame() {
+            // Ocultar mensaje de victoria
+            document.getElementById('winMessage').classList.remove('show');
+            
+            // Reiniciar variables
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            startTime = null;
+            
+            // Limpiar cronómetro
+            clearInterval(timerInterval);
+            document.getElementById('timer').textContent = '00:00';
+            
+            // Actualizar interfaz
+            updateScore();
+            updateMoves();
+            
+            // Crear y renderizar nuevo juego
+            createGameCards();
+            renderGameBoard();
+        }
+
+        // Cambiar nivel de dificultad
+        function setLevel(level) {
+            currentLevel = level;
+            totalPairs = level === 1 ? 10 : 20;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[onclick="setLevel(${level})"]`).classList.add('active');
+            
+            // Actualizar display de parejas totales
+            document.getElementById('totalPairs').textContent = totalPairs;
+            
+            // Reiniciar juego con nuevo nivel
+            resetGame();
+        }
+
+        // Actualizar display de parejas totales
+        function updateTotalPairsDisplay() {
+            document.getElementById('totalPairs').textContent = totalPairs;
+        }
+
+        // Inicializar juego
+        function initGame() {
+            updateTotalPairsDisplay();
+            createGameCards();
+            renderGameBoard();
+            updateScore();
+            updateMoves();
+        }
+
+        // Iniciar el juego cuando se carga la página
+        initGame();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975c202f266c0345',t:'MTc1NjMwMzU0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><iframe height="1" width="1" style="position: absolute; top: 0px; left: 0px; border: medium; visibility: hidden;"></iframe>
+
+
+</body></html>
